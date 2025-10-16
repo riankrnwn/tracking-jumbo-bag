@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tracking Jumbo Bag</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- QR Code Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      /* 🌈 Background & Font */
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+      }
+
+      /* 💠 Glass Card Style */
+      .glass-card {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+      }
+
+      /* 🧾 QR Container */
+      .qr-container {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+        max-width: 300px;
+        margin: 1rem auto;
+      }
+
+      /* 🏷️ Header */
+      header {
+        max-width: 600px;
+        margin: 2rem auto 0;
+        text-align: center;
+        color: white;
+      }
+      header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      }
+      header p {
+        font-size: 1.125rem;
+        max-width: 500px;
+        margin: 0 auto;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+      .header-image {
+        max-width: 150px;
+        margin: 1rem auto 2rem;
+        display: block;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      /* 📋 Table */
+      .data-table-container {
+        max-width: 900px;
+        margin: 2rem auto 4rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        padding: 1.5rem;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      th,
+      td {
+        border: 1px solid #cbd5e1;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+      }
+      th {
+        background-color: #e0e7ff;
+        font-weight: 600;
+      }
+      caption {
+        caption-side: top;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #3730a3;
+      }
+
+      /* 🌀 Spinner Loading */
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid #4f46e5;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 1rem auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* 📢 Text */
+      .loading-text {
+        text-align: center;
+        color: #4b5563;
+        font-style: italic;
+        margin-top: 1rem;
+      }
+      .error-text {
+        text-align: center;
+        color: #b91c1c;
+        font-weight: 600;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- 🌟 Header -->
+    <header>
+      <h1>Tracking Jumbo Bag</h1>
+      <img src="./img/MHL.jpg" alt="Logo Jumbo Bag" class="header-image" />
+      <p>
+        Sistem pelacakan Jumbo Bag menggunakan QR Code.<br />
+        Mudah, cepat, dan data tersimpan otomatis.
+      </p>
+    </header>
+
+    <!-- 🎯 Input & QR Generator -->
+    <div class="glass-card text-center">
+      <h1 class="text-3xl font-bold mb-4 text-gray-800">Tracking Jumbo Bag</h1>
+      <p class="mb-6 text-gray-700">
+        Masukkan Bag ID untuk generate QR Code.<br />
+        Scan QR Code untuk update status jumbo bag.<br />
+        Data tersimpan otomatis.
+      </p>
+
+      <input
+        type="text"
+        id="bagIdInput"
+        placeholder="Masukkan Bag ID (ex: SHIFT-TGL PROD-C/NC-XX)"
+        class="w-full p-3 border border-gray-300 rounded mb-4 text-center text-lg"
+        autocomplete="off"
+      />
+
+      <button
+        onclick="generateQR()"
+        class="bg-purple-600 text-white px-6 py-3 rounded hover:bg-purple-700 transition"
+      >
+        Generate QR Code
+      </button>
+
+      <!-- 📦 Hasil QR -->
+      <div id="qrResult" style="display: none; margin-top: 1.5rem">
+        <p class="mb-2 font-semibold text-gray-700">QR Code untuk Bag ID:</p>
+        <div class="qr-container">
+          <canvas id="qrCanvas"></canvas>
+        </div>
+
+        <div class="flex justify-center gap-4 mt-4">
+          <button
+            onclick="downloadQR()"
+            class="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition"
+          >
+            Download PNG
+          </button>
+          <button
+            onclick="downloadPDF()"
+            class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
+          >
+            Download PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📊 Statistik per Lokasi -->
+    <div class="flex flex-wrap justify-center gap-6 mt-8">
+      <div class="text-center">
+        <img
+          src="./img/Gambar1.webp"
+          alt="Warehouse Mill"
+          class="w-40 h-40 object-cover rounded-lg shadow-lg mx-auto"
+        />
+        <p class="mt-2 font-semibold text-white-800">Warehouse Mill</p>
+        <p class="text-2xl font-bold text-gray-900">
+          Jumlah Jumbo Bag: <span id="count-warehouse">-</span>
+        </p>
+      </div>
+
+      <div class="text-center">
+        <img
+          src="./img/Gambar2.jpg"
+          alt="Truck"
+          class="w-40 h-40 object-cover rounded-lg shadow-lg mx-auto"
+        />
+        <p class="mt-2 font-semibold text-white-800">Truck</p>
+        <p class="text-2xl font-bold text-gray-900">
+          Jumlah Jumbo Bag: <span id="count-truck">-</span>
+        </p>
+      </div>
+
+      <div class="text-center">
+        <img
+          src="./img/Gambar3.jpg"
+          alt="Warehouse Port"
+          class="w-40 h-40 object-cover rounded-lg shadow-lg mx-auto"
+        />
+        <p class="mt-2 font-semibold text-white-800">Warehouse Port</p>
+        <p class="text-2xl font-bold text-gray-900">
+          Jumlah Jumbo Bag: <span id="count-port">-</span>
+        </p>
+      </div>
+
+      <div class="text-center">
+        <img
+          src="./img/Gambar4.jpg"
+          alt="Tongkang"
+          class="w-40 h-40 object-cover rounded-lg shadow-lg mx-auto"
+        />
+        <p class="mt-2 font-semibold text-white-800">Tongkang</p>
+        <p class="text-2xl font-bold text-gray-900">
+          Jumlah Jumbo Bag: <span id="count-tongkang">-</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- 🔄 Spinner -->
+    <div id="spinner" class="spinner" style="display: none"></div>
+
+    <!-- 📋 Data Table -->
+    <div class="data-table-container" id="dataTableContainer">
+      <caption>
+        Data Tracking Jumbo Bag dari Google Sheets
+      </caption>
+      <!-- 🔍 Filter Nomor Kendaraan -->
+      <input
+        type="text"
+        id="filterInput"
+        placeholder="Cari berdasarkan Nomor Kendaraan..."
+        class="w-full p-3 border border-gray-300 rounded mb-4"
+        oninput="filterByVehicle()"
+      />
+      <p class="loading-text" id="loadingText">
+        Memuat data dari Google Sheets...
+      </p>
+      <table id="dataTable" style="display: none">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <p class="error-text" id="errorText" style="display: none"></p>
+    </div>
+
+    <!-- ⚙️ Script -->
+    <script>
+      /* ==================== KONFIGURASI ==================== */
+      const bagIdEntryId = "918941771";
+      const googleFormBaseURL =
+        "https://docs.google.com/forms/d/e/1FAIpQLSdW4XrOSb_1PILtWd_TP3O0J3v4gz0K68KZoCYnk0hBt2wLdQ/viewform";
+
+      const googleSheetCSVUrl_Tabel =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vRINLXLfahvSOaPJkD2q3p4u0e5XFCQTM1rqQypcWQkm4n5oBbr7WNH0rCVmIqMf9HaybSYLKSZkqzv/pub?gid=1475241168&single=true&output=csv";
+
+      const googleSheetCSVUrl_Angka =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vRINLXLfahvSOaPJkD2q3p4u0e5XFCQTM1rqQypcWQkm4n5oBbr7WNH0rCVmIqMf9HaybSYLKSZkqzv/pub?gid=1736726345&single=true&output=csv";
+
+      /* ==================== FUNGSI QR CODE ==================== */
+      function generateQR() {
+        const bagId = document.getElementById("bagIdInput").value.trim();
+        if (!bagId) return alert("Mohon masukkan Bag ID.");
+
+        const url =
+          googleFormBaseURL +
+          "?usp=pp_url&entry." +
+          encodeURIComponent(bagIdEntryId) +
+          "=" +
+          encodeURIComponent(bagId);
+
+        const qr = qrcode(0, "M");
+        qr.addData(url);
+        qr.make();
+
+        const canvas = document.getElementById("qrCanvas");
+        const ctx = canvas.getContext("2d");
+        const size = qr.getModuleCount() * 6;
+        canvas.width = canvas.height = size;
+
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, size, size);
+
+        for (let row = 0; row < qr.getModuleCount(); row++) {
+          for (let col = 0; col < qr.getModuleCount(); col++) {
+            ctx.fillStyle = qr.isDark(row, col) ? "black" : "white";
+            ctx.fillRect(col * 6, row * 6, 6, 6);
+          }
+        }
+
+        document.getElementById("qrResult").style.display = "block";
+      }
+
+      function downloadQR() {
+        const canvas = document.getElementById("qrCanvas");
+        const link = document.createElement("a");
+        link.download = "jumbo_bag_qrcode.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      }
+
+      async function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const canvas = document.getElementById("qrCanvas");
+        const imgData = canvas.toDataURL("image/png");
+
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: [canvas.width + 40, canvas.height + 80],
+        });
+
+        pdf.setFontSize(18);
+        pdf.text("[PT. MALINAU HIJAU LESTARI]", 20, 30);
+
+        const bagId = document.getElementById("bagIdInput").value.trim();
+        pdf.setFontSize(14);
+        pdf.text(`Bag ID: ${bagId}`, 20, 50);
+
+        pdf.addImage(imgData, "PNG", 20, 60, canvas.width, canvas.height);
+        pdf.save(`${bagId || "unknown"}.pdf`);
+      }
+
+      let globalData = [];
+
+      /* ==================== FUNGSI GOOGLE SHEETS ==================== */
+      function parseCSV(csvText) {
+        const lines = csvText.trim().split("\n");
+        const headers = lines[0].split(",").map((h) => h.trim());
+        const data = lines.slice(1).map((line) => {
+          const values = line.split(",").map((v) => v.trim());
+          const obj = {};
+          headers.forEach((header, i) => (obj[header] = values[i] || ""));
+          return obj;
+        });
+        return { headers, data };
+      }
+
+      function createTable(headers, data) {
+        const tableHead = document.getElementById("tableHead");
+        const tableBody = document.getElementById("tableBody");
+        tableHead.innerHTML = "";
+        tableBody.innerHTML = "";
+
+        const trHead = document.createElement("tr");
+        headers.forEach((header) => {
+          const th = document.createElement("th");
+          th.textContent = header;
+          trHead.appendChild(th);
+        });
+        tableHead.appendChild(trHead);
+
+        data.slice(0, 10).forEach((row) => {
+          const tr = document.createElement("tr");
+          headers.forEach((header) => {
+            const td = document.createElement("td");
+            td.textContent = row[header];
+            tr.appendChild(td);
+          });
+          tableBody.appendChild(tr);
+        });
+      }
+
+      async function loadTableData() {
+        const loadingText = document.getElementById("loadingText");
+        const errorText = document.getElementById("errorText");
+        const dataTable = document.getElementById("dataTable");
+
+        loadingText.style.display = "block";
+        errorText.style.display = "none";
+        dataTable.style.display = "none";
+
+        try {
+          const response = await fetch(googleSheetCSVUrl_Tabel);
+          if (!response.ok)
+            throw new Error(`HTTP error! status: ${response.status}`);
+
+          const csvText = await response.text();
+          const { headers, data } = parseCSV(csvText);
+          globalData = data; // simpan hasil data ke variabel global
+          createTable(headers, data);
+
+          loadingText.style.display = "none";
+          dataTable.style.display = "table";
+        } catch (error) {
+          loadingText.style.display = "none";
+          errorText.style.display = "block";
+          errorText.textContent =
+            "Gagal memuat data Google Sheets (tabel): " + error.message;
+        }
+      }
+
+      function filterByVehicle() {
+        const input = document
+          .getElementById("filterInput")
+          .value.toLowerCase();
+        const filtered = globalData.filter((row) =>
+          Object.values(row).some((val) => val.toLowerCase().includes(input))
+        );
+        if (filtered.length > 0) {
+          createTable(Object.keys(globalData[0]), filtered);
+        } else {
+          document.getElementById("tableBody").innerHTML =
+            "<tr><td colspan='99' class='text-center text-gray-500'>Tidak ada data ditemukan</td></tr>";
+        }
+      }
+      async function loadAngkaData() {
+        try {
+          const response = await fetch(googleSheetCSVUrl_Angka);
+          if (!response.ok)
+            throw new Error(`HTTP error! status: ${response.status}`);
+
+          const csvText = await response.text();
+          const { data } = parseCSV(csvText);
+
+          const getCount = (lokasi) =>
+            data.find((row) => row["Lokasi"] === lokasi)?.["Jumlah"] || "-";
+
+          document.getElementById("count-warehouse").textContent =
+            getCount("Warehouse Mill");
+          document.getElementById("count-truck").textContent =
+            getCount("Outbound/Trucking");
+          document.getElementById("count-port").textContent =
+            getCount("Warehouse Port");
+          document.getElementById("count-tongkang").textContent =
+            getCount("Tongkang");
+        } catch (error) {
+          console.error("Gagal memuat data jumlah area:", error);
+        }
+      }
+
+      /* 🔄 Refresh otomatis */
+      async function refreshData() {
+        const spinner = document.getElementById("spinner");
+        spinner.style.display = "block";
+        await Promise.all([loadTableData(), loadAngkaData()]);
+        spinner.style.display = "none";
+      }
+
+      /* 🚀 Saat halaman dimuat */
+      window.addEventListener("DOMContentLoaded", () => {
+        loadTableData();
+        loadAngkaData();
+      });
+    </script>
+  </body>
+</html>
